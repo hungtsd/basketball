@@ -12,8 +12,8 @@ canvas.width=  2000;
 const ball_radius= 30;
 const gravity= 1;
 const fps= 60, dt= Math.floor(1000/fps);
-const collision_loss= 1;
-const friction= 1;
+const collision_loss= 0.9;
+const friction= 0.95;
 
 //draw rules
 const show_trail= false;
@@ -105,7 +105,7 @@ auto_button.onclick= ()=>{
         obj_list.push(new Ball(1000,500));
         spawning_interval_id= setInterval(()=>{
             obj_list.push(new Ball(1000,500));
-        },dt);
+        },dt*5);
     }
 };
 
@@ -137,8 +137,8 @@ async function run(){
                 obj_list[id1].collision_circle(obj_list[id2]);
         }
 
-        draw_text(20,30,`FPS: ${current_fps}, Entity count: ${obj_list.length}`,30);
-        draw_text(20,70,`Data: ${last_frame_count}, ${last_dt}, ${sleeptime}`);
+        //draw_text(20,30,`FPS: ${current_fps}, Entity count: ${obj_list.length}`,30);
+        //draw_text(20,70,`Data: ${last_frame_count}, ${last_dt}, ${sleeptime}`);
 
         sleeptime= dt-Date.now()+t_start;
         if (sleeptime>0)
@@ -161,3 +161,4 @@ setInterval(()=>{
 
 
 run();
+
