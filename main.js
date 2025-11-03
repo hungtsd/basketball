@@ -81,11 +81,6 @@ class Ball{
             this.s_y= this.s_y*friction;
         }
     }
-
-    collision_circle(other){
-        let dist= Math.sqrt(Math.pow((this.x-other.x))+Math.pow(this.y-other.y));
-        return dist<=ball_radius*2;
-    }
 }
 
 let obj_list=[];
@@ -131,12 +126,6 @@ async function run(){
         for (let id=0; id<obj_list.length; id++)
             obj_list[id].draw();
 
-        let splitid= 200;
-        for (let id1=0; id1<splitid; id1++){
-            for (let id2=splitid; id2<obj_list.length; id2++)
-                obj_list[id1].collision_circle(obj_list[id2]);
-        }
-
         //draw_text(20,30,`FPS: ${current_fps}, Entity count: ${obj_list.length}`,30);
         //draw_text(20,70,`Data: ${last_frame_count}, ${last_dt}, ${sleeptime}`);
 
@@ -159,6 +148,4 @@ setInterval(()=>{
     frame_count= 0;
 },500);
 
-
 run();
-
