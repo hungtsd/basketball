@@ -1,17 +1,18 @@
 console.log(`JS file loaded!`);
 
-const canvas= document.getElementById("canvas");
-const ctx= canvas.getContext("2d");
-const new_button= document.getElementById("new_button");
-const auto_button= document.getElementById("auto_button");
+const canvas= document.getElementById('canvas');
+const ctx= canvas.getContext('2d');
+const new_button= document.getElementById('new_button');
+const auto_button= document.getElementById('auto_button');
+const throw_button= document.getElementById('throw_button');
 
 //ratio: 2:1
-canvas.height= 1000;
 canvas.width=  2000;
+canvas.height= 1000;
 
 const ball_radius= 30;
 const gravity= 1;
-const fps= 60, dt= Math.floor(1000/fps);
+const fps= 60, dt= Math.ceil(1000/fps);
 const collision_loss= 0.9;
 const friction= 0.95;
 
@@ -36,6 +37,16 @@ function draw_circle(x,y,r,col_inner,col_border,thickness){
     ctx.stroke();
 }
 
+function draw_line(x1,y1,x2,y2,col,width){
+    ctx.strokeStyle= col;
+    ctx.lineWidth= width;
+
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.stroke();
+}
+
 function draw_text(x,y,text,size){
     ctx.font= `${size}px Arial`;
     ctx.fillStyle=`black`;
@@ -48,12 +59,12 @@ function clear_canvas(){
 }
 
 class Ball{
-    constructor(x,y){
-
+    constructor(x, y, sx, sy, wait=false){
         this.x= x;
         this.y= y;
-        this.s_x= (Math.floor(Math.random()*10)+1)*((Math.floor(Math.random()*2)===0)?1:-1);
-        this.s_y= 0;
+        this.s_x= sx;
+        this.s_y= sy;
+        this.wait= wait;
     }
 
     draw(){
@@ -61,6 +72,8 @@ class Ball{
     }
 
     update(){
+        if (this.wait)
+            return;
         this.x+=this.s_x;
         this.y+=this.s_y;
 
@@ -81,12 +94,24 @@ class Ball{
             this.s_y= this.s_y*friction;
         }
     }
+
+    collision_circle(other){
+        let dist= Math.sqrt(Math.pow((this.x-other.x))+Math.pow(this.y-other.y));
+        return dist<=ball_radius*2;
+    }
 }
 
 let obj_list=[];
 
 new_button.onclick= ()=>{
-    obj_list.push(new Ball(1000,500));
+    obj_list.push(new Ball(1000,500,(Math.floor(Math.random()*10)+1)*((Math.floor(Math.random()*2)===0)?1:-1),0));
+};
+
+let waiting_ball= [];
+throw_button.onclick= ()=>{
+    let _new= new Ball(Math.floor(Math.random()*1150+750), 700, 0, 0, true);
+    waiting_ball.push(_new);
+    obj_list.push(_new);
 };
 
 
@@ -97,9 +122,9 @@ auto_button.onclick= ()=>{
         spawning_interval_id= null;
     }
     else{
-        obj_list.push(new Ball(1000,500));
+        obj_list.push(new Ball(1000,500,(Math.floor(Math.random()*10)+1)*((Math.floor(Math.random()*2)===0)?1:-1),0));
         spawning_interval_id= setInterval(()=>{
-            obj_list.push(new Ball(1000,500));
+            obj_list.push(new Ball(1000,500,(Math.floor(Math.random()*10)+1)*((Math.floor(Math.random()*2)===0)?1:-1),0));
         },dt*5);
     }
 };
@@ -108,14 +133,11 @@ function sleep(ms){
     return new Promise(result => setTimeout(result,ms));
 }
 
-let frame_count=0, current_fps= 0;
-let last_frame_count=0, last_dt= dt, sleeptime= 0;
+let mouse_x= 0, mouse_y= 0, testX=0, testY=0;
 
 async function run(){
     while (true){
         let t_start= Date.now();
-
-        frame_count++;
 
         if (!show_trail)
             clear_canvas();
@@ -126,8 +148,7 @@ async function run(){
         for (let id=0; id<obj_list.length; id++)
             obj_list[id].draw();
 
-        //draw_text(20,30,`FPS: ${current_fps}, Entity count: ${obj_list.length}`,30);
-        //draw_text(20,70,`Data: ${last_frame_count}, ${last_dt}, ${sleeptime}`);
+        draw_line(0, 500, 100, 500, 'black', 10);
 
         sleeptime= dt-Date.now()+t_start;
         if (sleeptime>0)
@@ -135,17 +156,20 @@ async function run(){
     }
 };
 
-let time_last= Date.now();
-
-setInterval(()=>{
-    let time_now= Date.now();
-    current_fps= Math.floor(frame_count*1000/(time_now-time_last));
-    
-    last_frame_count= frame_count;
-    last_dt= time_now-time_last;
-
-    time_last= time_now;
-    frame_count= 0;
-},500);
-
 run();
+
+canvas.addEventListener('mousemove', (event)=>{
+    const rect= canvas.getBoundingClientRect();
+    mouse_x= (event.clientX-rect.left)*2-20,
+    mouse_y= (event.clientY-rect.top)*2-10;
+});
+
+canvas.addEventListener('mousedown', (event)=>{
+
+    for (const obj of waiting_ball){
+        obj.s_x= Math.min(Math.max(Math.trunc((mouse_x-obj.x)/10),-30), 30);
+        obj.s_y= Math.min(Math.max(Math.trunc((mouse_y-obj.y)/10),-40), 40);
+        obj.wait= false;
+    }
+    waiting_ball.length= 0;
+});
